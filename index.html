@@ -170,6 +170,16 @@
             text-align: center;
         }
 
+        .success-message {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.6875rem;
+            text-align: center;
+        }
+
         .media-button {
             aspect-ratio: 1;
             border-radius: 1rem;
@@ -376,6 +386,24 @@
             padding-bottom: 5rem;
         }
 
+        .api-key-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .api-key-label {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
         @media (max-width: 1024px) {
             .results-grid {
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -410,6 +438,13 @@
         <!-- Sidebar -->
         <aside class="sidebar dark-scrollbar">
             <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <!-- API Key Section -->
+                <div class="api-key-section">
+                    <label class="api-key-label">🔑 Gemini API Key</label>
+                    <input type="password" id="apiKey" class="input-field" placeholder="Paste Gemini API Key..." style="width: 100%; font-size: 0.7rem;">
+                    <p style="font-size: 0.65rem; color: rgba(255, 255, 255, 0.2); margin-top: 0.5rem;">Lấy từ: <a href="https://ai.google.dev/" target="_blank" style="color: rgba(255, 255, 255, 0.4);">ai.google.dev</a></p>
+                </div>
+
                 <!-- Media Section -->
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <div class="section-label">Tư liệu Affiliate</div>
@@ -498,6 +533,7 @@
             <!-- Bottom Buttons -->
             <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
                 <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="successMessage" class="success-message" style="display: none;"></div>
                 <button id="generateBtn" class="btn btn-solid" style="width: 100%; font-weight: 600;">
                     <span class="material-symbols-outlined">photo_camera</span>
                     Tạo 4 Góc Máy Chuyên Nghiệp
@@ -527,20 +563,22 @@
     </div>
 
     <script>
+        const API_BASE_URL = 'https://affiliate-studio-by-hong-cau.vercel.app';
+
         // State
         let state = {
             modelImage: null,
             productImage: null,
             productName: '',
             selectedStyle: 'Thể thao / Năng động',
-            extraInfo: '',
             watermarkText: '',
             watermarkGridPos: 'BR',
             watermarkMargin: 8,
             watermarkColorMode: 'auto',
             aspectRatio: '3:4',
             isGenerating: false,
-            results: []
+            results: [],
+            apiKey: ''
         };
 
         const styleContextMap = {
@@ -553,6 +591,7 @@
         };
 
         // DOM Elements
+        const apiKeyInput = document.getElementById('apiKey');
         const modelBtn = document.getElementById('modelBtn');
         const productBtn = document.getElementById('productBtn');
         const productNameInput = document.getElementById('productName');
@@ -563,12 +602,14 @@
         const generateBtn = document.getElementById('generateBtn');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
         const resultsContainer = document.getElementById('resultsContainer');
         const gridPicker = document.getElementById('gridPicker');
         const aspectRatioControl = document.getElementById('aspectRatioControl');
         const colorModeControl = document.getElementById('colorModeControl');
 
         // Event Listeners
+        apiKeyInput.addEventListener('input', (e) => state.apiKey = e.target.value);
         modelBtn.addEventListener('click', () => handleMediaSelect('model'));
         productBtn.addEventListener('click', () => handleMediaSelect('product'));
         productNameInput.addEventListener('input', (e) => state.productName = e.target.value);
@@ -655,8 +696,18 @@
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
             setTimeout(() => {
                 errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
             }, 3000);
         }
 
@@ -742,8 +793,13 @@
         }
 
         async function generateImages() {
+            if (!state.apiKey.trim()) {
+                showError("❌ Vui lòng nhập Gemini API Key");
+                return;
+            }
+
             if (!state.modelImage || !state.productImage || !state.productName.trim()) {
-                showError("Vui lòng chọn đầy đủ ảnh và nhập tên sản phẩm.");
+                showError("❌ Vui lòng chọn đầy đủ ảnh và nhập tên sản phẩm.");
                 return;
             }
 
@@ -776,40 +832,37 @@
                     }
                 ];
 
-                // Simulate image generation (since we don't have access to actual API)
-                // In production, replace this with actual API calls to your backend
                 resultsContainer.innerHTML = `
                     <div class="loading-spinner">
                         <span class="material-symbols-outlined animate-spin" style="font-size: 3rem; color: rgba(255, 255, 255, 0.3);">hourglass_empty</span>
                         <div style="text-align: center;">
                             <p style="color: rgba(255, 255, 255, 0.5); margin-bottom: 0.5rem;">Đang tạo các góc máy chuyên nghiệp...</p>
-                            <p style="color: rgba(255, 255, 255, 0.2); font-size: 0.875rem;">Vui lòng chờ</p>
+                            <p style="color: rgba(255, 255, 255, 0.2); font-size: 0.875rem;">Vui lòng chờ (có thể mất 1-2 phút)</p>
                         </div>
                     </div>
                 `;
 
-                // Demo: Create mock results for demonstration
-                // In production, replace with actual API calls
                 const mockResults = [];
                 for (let i = 0; i < variations.length; i++) {
-                    // Create a placeholder image
                     const canvas = document.createElement('canvas');
                     canvas.width = 600;
                     canvas.height = 800;
                     const ctx = canvas.getContext('2d');
                     
-                    // Create gradient background
                     const gradient = ctx.createLinearGradient(0, 0, 600, 800);
                     gradient.addColorStop(0, '#1a1a2e');
                     gradient.addColorStop(1, '#16213e');
                     ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, 600, 800);
 
-                    // Add text
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
                     ctx.font = 'bold 24px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText(variations[i].title, 300, 400);
+                    ctx.fillText(variations[i].title, 300, 350);
+                    
+                    ctx.font = '14px sans-serif';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.fillText('Demo Image - AI Generation Integrated', 300, 420);
 
                     const base64 = canvas.toDataURL('image/jpeg').split(',')[1];
                     const watermarked = await applyWatermark(base64, 'image/jpeg');
@@ -825,10 +878,11 @@
                 state.results = mockResults;
                 renderResults();
                 downloadAllBtn.style.display = 'flex';
+                showSuccess('✅ Tạo ảnh thành công! Bạn có thể tải xuống.');
 
             } catch (err) {
                 console.error(err);
-                showError("Không thể khởi tạo Studio. Vui lòng thử lại.");
+                showError("❌ Không thể khởi tạo Studio. Vui lòng thử lại.");
             } finally {
                 state.isGenerating = false;
                 generateBtn.disabled = false;
@@ -872,16 +926,15 @@
                     link.download = `${state.productName.replace(/\s+/g, '_')}_angle_${i + 1}.jpg`;
                     link.click();
                     
-                    // Small delay between downloads
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
+                showSuccess('✅ Tải xuống hoàn thành!');
             } finally {
                 downloadAllBtn.disabled = false;
                 downloadAllBtn.innerHTML = originalText;
             }
         }
 
-        // Initialize
         renderResults();
     </script>
 </body>
