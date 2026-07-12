@@ -1,0 +1,17 @@
+{
+  "name": "affiliate-studio-backend",
+  "version": "1.0.0",
+  "description": "Backend for Affiliate Studio Pro",
+  "main": "api/generate.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build needed'"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
